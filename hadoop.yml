@@ -1,0 +1,110 @@
+- hosts: rhel
+  vars:
+          - dir: "/namenode"
+  tasks:
+          - name: "Removing links of previous hadoop"
+            file:
+                    path: "/etc/hadoop"
+                    state: absent
+
+          - name: "copy jdk & hadoop software"
+            copy:
+                    src: /root/jdk-8u171-linux-x64.rpm
+                    dest: /root/jdk-8u171-linux-x64.rpm
+
+            copy:
+                    src: /root/hadoop-1.2.1-1.x86_64.rpm
+                    dest: /root/hadoop-1.2.1-1.x86_64.rpm
+                    
+
+          - name: "installing jdk and then hadoop"
+            command: "rpm -i jdk-8u171-linux-x64.rpm"
+            command: "rpm -i hadoop-1.2.1-1.x86_64.rpm --force"
+
+          - name: delete directory if exist 
+            file: 
+              path: "{{ dir }}"
+              state: absent 
+
+          - name: "Creating Namenode Directory"
+            file:
+                    path: "{{ dir }}"
+                    state: directory 
+
+          - name: "Configuring hdfs-site.xml file"
+            template:
+                    dest: "/etc/hadoop/hdfs-site.xml"
+                    src: "/ws1/hadoop/hdfs-site.xml"
+
+          - name: "Configuring core-site.xml file"
+            template:
+                    src: "/ws1/hadoop/core-site.xml"
+                    dest: "/etc/hadoop/core-site.xml"
+
+          - name: "Formating NameNode directory before use"
+            command: "echo Y | hadoop namenode -format"
+
+          - name: "stopping namenode service"
+            command: "hadoop-daemon.sh stop  namenode"
+            ignore_errors: yes
+
+          - name: "starting namenode service"
+            command: "hadoop-daemon.sh start namenode"
+
+          - name: stopping firewall
+            command: "systemctl stop firewalld"
+
+
+- hosts: linux
+  vars:
+        - dir: "/dn"
+  tasks:
+          - name: "Removing links of previous hadoop"
+            file:
+                    path: "/etc/hadoop"
+                    state: absent
+
+          
+          - name: "copy jdk & hadoop software"
+            copy:
+              src: "/root/jdk-8u171-linux-x64.rpm"
+              dest: "/root/jdk-8u171-linux-x64.rpm"
+
+            copy:
+                    src: "/root/hadoop-1.2.1-1.x86_64.rpm"
+                    dest: "/root/hadoop-1.2.1-1.x86_64.rpm"
+
+          - name: "installing jdk and then hadoop"
+            command: "rpm -i jdk-8u171-linux-x64.rpm"
+            command: "rpm -i hadoop-1.2.1-1.x86_64.rpm --force"
+
+          - name: delete directory if exist 
+            file: 
+              path: "{{ dir }}"
+              state: absent
+
+          - name: "Creating Datanode Directory"
+            file:
+                    path: "{{ dir }}"
+                    state: directory
+
+          - name: "Configuring hdfs-site.xml file"
+            template:
+                    src: "/ws1/hadoop/hdfs-site.xml"
+                    dest: "/etc/hadoop/hdfs-site.xml"
+
+          - name: "Configuring core-site.xml file"
+            template:
+                    src: "/ws1/hadoop/core-site.xml"
+                    dest: "/etc/hadoop/core-site.xml"
+
+          - name: "stopping datanode service"
+            command: "hadoop-daemon.sh stop datanode"
+            ignore_errors: yes
+
+          - name: "starting datanode service"
+            command: "hadoop-daemon.sh start datanode"
+
+          - name: "stopping firewall"
+            command: "systemctl stop firewalld"
+
